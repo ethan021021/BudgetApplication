@@ -20,7 +20,7 @@
                 <subviews>
                     <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter budget amount here" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="jU6-cb-niS">
                         <rect key="frame" x="16" y="6.0000000000000018" width="343" height="31.666666666666671"/>
-                        <nil key="textColor"/>
+                        <color key="textColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
                         <textInputTraits key="textInputTraits" keyboardType="numbersAndPunctuation" returnKeyType="done"/>
                     </textField>
@@ -32,6 +32,7 @@
                     <constraint firstItem="jU6-cb-niS" firstAttribute="leading" secondItem="238-QD-Azh" secondAttribute="leading" constant="16" id="q6b-AY-qup"/>
                 </constraints>
             </tableViewCellContentView>
+            <color key="backgroundColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
             <connections>
                 <outlet property="textField" destination="jU6-cb-niS" id="sdp-uT-cl8"/>
             </connections>

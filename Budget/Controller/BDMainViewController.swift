@@ -28,6 +28,8 @@ class BDMainViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        
+        self.view.backgroundColor = self.tableView.backgroundColor
         self.tableView.register(BDMainFeedTableViewCell.self, forCellReuseIdentifier: cellIdentifier)
         self.tableView.tableFooterView = UIView.init()
         self.tableView.allowsSelection = false
@@ -45,8 +47,14 @@ class BDMainViewController: UIViewController {
         }
         
         // Navigation bar setup
-        self.navigationItem.rightBarButtonItem = UIBarButtonItem.init(barButtonSystemItem: .organize, target: self, action: #selector(self.didTapSettings))
-        self.navigationItem.leftBarButtonItem = UIBarButtonItem.init(barButtonSystemItem: .add, target: self, action: #selector(self.didTapAddDeductedAmount))
+        let organizeButton = UIBarButtonItem.init(barButtonSystemItem: .organize, target: self, action: #selector(self.didTapSettings))
+        let addButton = UIBarButtonItem.init(barButtonSystemItem: .add, target: self, action: #selector(self.didTapAddDeductedAmount))
+        
+        organizeButton.tintColor = UIColor.white
+        addButton.tintColor = UIColor.white
+        
+        self.navigationItem.rightBarButtonItem = organizeButton
+        self.navigationItem.leftBarButtonItem = addButton
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -149,8 +157,12 @@ class BDMainViewController: UIViewController {
         
         addAmountAlertController.addAction(addAction)
         
-        addAmountAlertController.addTextField(configurationHandler: nil)
-        addAmountAlertController.addTextField(configurationHandler: nil)
+        addAmountAlertController.addTextField { (textField) in
+            textField.placeholder = "How much did you spend?"
+        }
+        addAmountAlertController.addTextField { (textField) in
+            textField.placeholder = "What did you spend it on?"
+        }
         
         present(addAmountAlertController, animated: true, completion: nil)
     }
@@ -159,6 +171,12 @@ class BDMainViewController: UIViewController {
     
     private func deductFromBalance(amount: Float, balance: Float) -> Float {
         let calculatedAmount = balance - amount
+        self.currentBudget = calculatedAmount
+        return calculatedAmount
+    }
+    
+    private func addBackToBalance(amount: Float, balance: Float) -> Float {
+        let calculatedAmount = balance + amount
         self.currentBudget = calculatedAmount
         return calculatedAmount
     }
@@ -190,28 +208,60 @@ extension BDMainViewController: BDSettingsTableViewControllerDelegate {
 
 extension BDMainViewController: UITableViewDelegate, UITableViewDataSource {
     func numberOfSections(in tableView: UITableView) -> Int {
-        return 1
-    }
-    
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        
         if let dataSource = self.dataSource {
             return dataSource.count
         }
-
+        
         return 0
     }
     
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return 1
+    }
+    
+    func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+        let footerView = UIView.init()
+        footerView.backgroundColor = UIColor.clear
+        return footerView
+    }
+    
+    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+        return 30.0
+    }
+    
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return UITableViewAutomaticDimension
+        return 130.0
+    }
+    
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        if let dataSource = self.dataSource {
+            let amount = dataSource[indexPath.section]
+            let calculatedAmount = self.addBackToBalance(amount: amount.amount, balance: self.currentBudget)
+            
+            do {
+                try realm.write {
+                    realm.delete(amount)
+                }
+                
+                UserDefaults.standard.set(calculatedAmount, forKey: "balance")
+                
+                self.updateTitleToCurrentBalance(currentBudgetAmount: calculatedAmount)
+            } catch let err {
+                print("error removing row from realm: \(err)")
+            }
+            
+            self.tableView.reloadData()
+        }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier, for: indexPath)
         
+        cell.backgroundColor = UIColor(red: 0.80, green: 0.54, blue: 0.97, alpha: 1.00)
+        
         if let dataSource = self.dataSource {
-            cell.textLabel?.text = "$\(dataSource[indexPath.row].amount.description)"
-            cell.detailTextLabel?.text = dataSource[indexPath.row].itemDescription
+            cell.textLabel?.text = "$\(dataSource[indexPath.section].amount.description)"
+            cell.detailTextLabel?.text = dataSource[indexPath.section].itemDescription
         }
         
         return cell
